@@ -1,0 +1,12 @@
+# Ignore the mobile screenshots directory
+mobile-screenshots/
+
+# Ignore the desktop screenshots directory
+desktop-screenshots/
+
+# Ignore the Playwright MCP directory
+.playwright-mcp/
+
+# Ignore the Claude directory
+.claude/
+CLAUDE.md
