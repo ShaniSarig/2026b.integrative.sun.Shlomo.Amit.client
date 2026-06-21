@@ -32,7 +32,15 @@ const SCREENS = {
 
 export default function App() {
   const { variant } = useViewport();
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cw_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      console.error('Failed to load session', e);
+      return null;
+    }
+  });
   const [active, setActive] = useState('dashboard');
   const [config, setConfig] = useState({
     brandName: 'The Closet Whisperer',
@@ -50,6 +58,14 @@ export default function App() {
   });
 
   window.__brandConfig = config;
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('cw_user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('cw_user');
+    }
+  }, [user]);
 
   useEffect(() => {
     adminApi.getConfig()

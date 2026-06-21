@@ -5,7 +5,7 @@ import { NAV } from './navigation.js';
 
 export default function DesktopShell({ active, onNavigate, onSignOut, user, children }) {
   return (
-    <div className="min-h-screen flex bg-canvas">
+    <div className="h-screen flex overflow-hidden bg-canvas">
       <aside className="w-[260px] shrink-0 bg-white border-r border-border-subtle flex flex-col">
         <div className="px-6 pt-8 pb-6">
           <AppLogo layout="inline" size={40} />
@@ -50,7 +50,7 @@ export default function DesktopShell({ active, onNavigate, onSignOut, user, chil
           </button>
         </div>
       </aside>
-      <main className="flex-1 min-w-0 overflow-x-hidden">{children}</main>
+      <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">{children}</main>
     </div>
   );
 }
