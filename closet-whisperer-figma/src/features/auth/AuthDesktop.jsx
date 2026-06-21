@@ -12,7 +12,7 @@ const FEATURES = [
   { icon: RefreshCcw, title: 'Anti-Repetition', detail: 'Avoids duplicate looks' },
 ];
 
-export default function AuthDesktop({ mode, setMode, form, setField, submit, submitting }) {
+export default function AuthDesktop({ mode, setMode, form, setField, submit, submitting, error }) {
   const isLogin = mode === 'login';
   return (
     <div className="min-h-screen bg-canvas flex">
@@ -71,6 +71,9 @@ export default function AuthDesktop({ mode, setMode, form, setField, submit, sub
                   Forgot password?
                 </button>
               </div>
+            )}
+            {error && (
+              <p className="text-sm text-red-600 text-center">{error}</p>
             )}
             <Button type="submit" full disabled={submitting}>
               {submitting ? 'Working…' : isLogin ? 'Login to dashboard' : 'Create my closet'}

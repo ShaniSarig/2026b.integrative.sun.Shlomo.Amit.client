@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, AtSign, Mail, Lock, Calendar } from 'lucide-react';
+import { User, AtSign, Mail, Lock, Calendar, ChevronDown } from 'lucide-react';
 import TextField from '../../components/ui/TextField.jsx';
 import Button from '../../components/ui/Button.jsx';
 
@@ -9,6 +9,7 @@ export default function PersonalInfoForm({ user }) {
     name: user?.name ?? 'Shani',
     email: user?.email ?? 'demo@closetwhisperer.app',
     dateOfBirth: user?.dateOfBirth ?? '',
+    gender: user?.gender ?? '',
     currentPassword: '',
     newPassword: '',
   });
@@ -56,6 +57,27 @@ export default function PersonalInfoForm({ user }) {
           onChange={set('dateOfBirth')}
           autoComplete="bday"
         />
+        <label className="flex flex-col gap-2">
+          <span className="font-sans font-medium text-sm leading-[18px] text-ink-primary">
+            Gender
+          </span>
+          <div className="flex items-center gap-3 px-5 py-[14px] bg-elevated border border-border-subtle rounded-md focus-within:border-border-strong relative">
+            <User size={20} className="text-ink-muted shrink-0" strokeWidth={1.75} />
+            <select
+              value={form.gender}
+              onChange={set('gender')}
+              required
+              className="flex-1 bg-transparent outline-none text-base leading-6 text-ink-primary appearance-none cursor-pointer pr-8"
+            >
+              <option value="" disabled hidden>Select gender</option>
+              <option value="Male" className="bg-white text-ink-primary">Male</option>
+              <option value="Female" className="bg-white text-ink-primary">Female</option>
+              <option value="Other" className="bg-white text-ink-primary">Other</option>
+              <option value="Prefer not to say" className="bg-white text-ink-primary">Prefer not to say</option>
+            </select>
+            <ChevronDown size={18} className="text-ink-muted pointer-events-none absolute right-5" />
+          </div>
+        </label>
       </div>
 
       <div className="pt-4 border-t border-border-subtle">

@@ -12,7 +12,7 @@ export default function DesktopShell({ active, onNavigate, onSignOut, user, chil
         </div>
         <nav className="flex-1 px-3">
           <ul className="flex flex-col gap-1">
-            {NAV.map(({ id, label, icon: Icon }) => {
+            {NAV.filter((n) => n.id !== 'admin' || user?.role === 'ADMIN').map(({ id, label, icon: Icon }) => {
               const isActive = active === id;
               return (
                 <li key={id}>

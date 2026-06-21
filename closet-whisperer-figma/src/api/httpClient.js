@@ -11,6 +11,7 @@ export class ApiError extends Error {
 
 const defaultHeaders = {
   "Content-Type": "application/json",
+  "API-Version": "1.4",
 };
 
 export async function apiRequest(path, options = {}) {

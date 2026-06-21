@@ -4,7 +4,7 @@ import Button from '../../components/ui/Button.jsx';
 import Checkbox from '../../components/ui/Checkbox.jsx';
 import AuthFields from './AuthFields.jsx';
 
-export default function AuthMobile({ mode, setMode, form, setField, submit, submitting }) {
+export default function AuthMobile({ mode, setMode, form, setField, submit, submitting, error }) {
   const isLogin = mode === 'login';
   return (
     <div className="min-h-full bg-canvas flex flex-col items-center px-6 pt-10 pb-8 gap-8">
@@ -32,6 +32,9 @@ export default function AuthMobile({ mode, setMode, form, setField, submit, subm
               Forgot password?
             </button>
           </div>
+        )}
+        {error && (
+          <p className="text-sm text-red-600 text-center">{error}</p>
         )}
         <Button type="submit" full disabled={submitting}>
           {submitting ? 'Working…' : isLogin ? 'Login to dashboard' : 'Create my closet'}
