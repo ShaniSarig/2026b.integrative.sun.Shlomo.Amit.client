@@ -3,9 +3,12 @@ import ProfileForm from './ProfileForm.jsx';
 import PersonaCard from './PersonaCard.jsx';
 import PersonalInfoForm from './PersonalInfoForm.jsx';
 import ProfileTabs from './ProfileTabs.jsx';
+import { useProfile } from '../../hooks/useProfile.js';
 
 export default function ProfileDesktop({ user }) {
   const [tab, setTab] = useState('personal');
+  const { profile, loading, saving, saveBiometrics, savePreferences } = useProfile(user);
+
   return (
     <div className="px-10 py-10 max-w-[1200px] mx-auto flex flex-col gap-8">
       <header className="flex flex-col gap-1">
@@ -23,7 +26,19 @@ export default function ProfileDesktop({ user }) {
       </div>
       <div className="grid grid-cols-[1fr_360px] gap-8 items-start">
         <div className="bg-white border border-border-subtle rounded-lg p-8 shadow-card">
-          {tab === 'personal' ? <PersonalInfoForm user={user} /> : <ProfileForm />}
+          {tab === 'personal' ? (
+            <PersonalInfoForm user={user} />
+          ) : loading ? (
+            <p className="text-ink-muted text-sm">Loading profile…</p>
+          ) : (
+            <ProfileForm
+              user={user}
+              profile={profile}
+              saving={saving}
+              onSaveBiometrics={saveBiometrics}
+              onSavePreferences={savePreferences}
+            />
+          )}
         </div>
         <PersonaCard user={user} />
       </div>

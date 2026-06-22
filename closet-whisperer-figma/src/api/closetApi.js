@@ -20,6 +20,12 @@ export const authApi = {
       method: "PUT",
       body: JSON.stringify(payload),
     }),
+
+  // DELETE /users/{systemID}/{userEmail}?password=
+  deleteUser: (systemID, userEmail, password) =>
+    apiRequest(`/users/${systemID}/${userEmail}${qs({ password })}`, {
+      method: "DELETE",
+    }),
 };
 
 // ── User Profile ──────────────────────────────────────────────────────────────
@@ -45,6 +51,10 @@ export const profileApi = {
       method: "PUT",
       body: JSON.stringify(payload),
     }),
+
+  // GET /profiles?userSystemID=&userEmail=&userPassword=
+  getProfileByEmail: (auth) =>
+    apiRequest(`/profiles${qs(auth)}`),
 };
 
 // ── Style Weights ─────────────────────────────────────────────────────────────
@@ -68,6 +78,13 @@ export const styleWeightApi = {
 // ── Wardrobe (Clothing Items) ──────────────────────────────────────────────────
 
 export const inventoryApi = {
+  // POST /items/analyze?userSystemID=&userEmail=&userPassword=
+  analyzeImage: (auth, imageBase64, imageUrl) =>
+    apiRequest(`/items/analyze${qs(auth)}`, {
+      method: "POST",
+      body: JSON.stringify({ imageBase64, imageUrl }),
+    }),
+
   // POST /items?userSystemID=&userEmail=&userPassword=
   createItem: (auth, payload, imageUrl, imageBase64) =>
     apiRequest(
@@ -91,6 +108,14 @@ export const inventoryApi = {
   // DELETE /items/{itemId}?userSystemID=&userEmail=&userPassword=
   deleteItem: (itemId, auth) =>
     apiRequest(`/items/${itemId}${qs(auth)}`, { method: "DELETE" }),
+
+  // GET /items/{itemId}?userSystemID=&userEmail=&userPassword=
+  getItem: (itemId, auth) =>
+    apiRequest(`/items/${itemId}${qs(auth)}`),
+
+  // GET /items?userSystemID=&userEmail=&userPassword=&ownerProfileId=&page=&size=&activeOnly=
+  listItems: (auth, ownerProfileId, page = 0, size = 50, activeOnly = true) =>
+    apiRequest(`/items${qs({ ...auth, ownerProfileId, page, size, activeOnly })}`),
 };
 
 // ── Outfits ───────────────────────────────────────────────────────────────────
@@ -112,6 +137,10 @@ export const recommendationApi = {
     apiRequest(`/outfits/${outfitId}/rate${qs({ score, ...auth })}`, {
       method: "PUT",
     }),
+
+  // DELETE /outfits/{outfitId}?userSystemID=&userEmail=&userPassword=
+  deleteOutfit: (outfitId, auth) =>
+    apiRequest(`/outfits/${outfitId}${qs(auth)}`, { method: "DELETE" }),
 };
 
 // ── Outfit History ────────────────────────────────────────────────────────────
@@ -168,5 +197,16 @@ export const adminApi = {
   deleteUser: (auth, targetSystemId, targetEmail) =>
     apiRequest(`/admin/users/${targetSystemId}/${targetEmail}${qs(auth)}`, {
       method: "DELETE",
+    }),
+};
+
+// ── Commands ─────────────────────────────────────────────────────────────────
+
+export const commandApi = {
+  // POST /commands?userPassword=
+  invokeCommand: (userPassword, payload) =>
+    apiRequest(`/commands${qs({ userPassword })}`, {
+      method: "POST",
+      body: JSON.stringify(payload),
     }),
 };

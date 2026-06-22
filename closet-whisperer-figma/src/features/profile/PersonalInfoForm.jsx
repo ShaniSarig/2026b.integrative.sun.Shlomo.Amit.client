@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { User, AtSign, Mail, Lock, Calendar, ChevronDown } from 'lucide-react';
 import TextField from '../../components/ui/TextField.jsx';
 import Button from '../../components/ui/Button.jsx';
+import { authApi } from '../../api/closetApi.js';
 
 export default function PersonalInfoForm({ user }) {
   const [form, setForm] = useState({
@@ -13,15 +14,44 @@ export default function PersonalInfoForm({ user }) {
     currentPassword: '',
     newPassword: '',
   });
-  const set = (k) => (e) =>
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+
+  const set = (k) => (e) => {
+    setSaved(false);
+    setSaveError(null);
     setForm((f) => ({ ...f, [k]: e?.target ? e.target.value : e }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!user) return;
+    setSaving(true);
+    setSaved(false);
+    setSaveError(null);
+    try {
+      const payload = {
+        username: form.username,
+        avatar: form.name,
+        gender: form.gender || undefined,
+        dateOfBirth: form.dateOfBirth || undefined,
+        ...(form.newPassword ? { password: form.newPassword } : {}),
+      };
+      const passwordToUse = form.currentPassword || user.password;
+      await authApi.updateUser(user.systemId, user.email, passwordToUse, payload);
+      setSaved(true);
+    } catch (err) {
+      setSaveError(err?.message || 'Failed to save personal info');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <form
       className="flex flex-col gap-5 w-full"
-      onSubmit={(e) => {
-        e.preventDefault();
-      }}
+      onSubmit={handleSubmit}
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TextField
@@ -66,7 +96,6 @@ export default function PersonalInfoForm({ user }) {
             <select
               value={form.gender}
               onChange={set('gender')}
-              required
               className="flex-1 bg-transparent outline-none text-base leading-6 text-ink-primary appearance-none cursor-pointer pr-8"
             >
               <option value="" disabled hidden>Select gender</option>
@@ -106,9 +135,16 @@ export default function PersonalInfoForm({ user }) {
         </div>
       </div>
 
+      {saveError && (
+        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-4 py-2">{saveError}</p>
+      )}
+      {saved && (
+        <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-4 py-2">Personal info saved!</p>
+      )}
+
       <div className="flex gap-3">
-        <Button type="submit">Save personal info</Button>
-        <Button variant="secondary" type="reset">Reset</Button>
+        <Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save personal info'}</Button>
+        <Button variant="secondary" type="reset" onClick={() => { setSaved(false); setSaveError(null); }}>Reset</Button>
       </div>
     </form>
   );

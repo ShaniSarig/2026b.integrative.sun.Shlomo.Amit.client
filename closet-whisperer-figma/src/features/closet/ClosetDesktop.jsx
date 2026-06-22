@@ -4,8 +4,8 @@ import Button from '../../components/ui/Button.jsx';
 import ItemTile from '../../components/ui/ItemTile.jsx';
 import { useClosetFilters, CATEGORIES } from './useClosetFilters.js';
 
-export default function ClosetDesktop({ onNavigate }) {
-  const { query, setQuery, category, setCategory, items } = useClosetFilters();
+export default function ClosetDesktop({ user, onNavigate }) {
+  const { query, setQuery, category, setCategory, items, loading, deleteItem, toggleStatus } = useClosetFilters(user);
   return (
     <div className="px-10 py-10 max-w-[1400px] mx-auto flex flex-col gap-6">
       <header className="flex items-end justify-between">
@@ -47,9 +47,10 @@ export default function ClosetDesktop({ onNavigate }) {
         </div>
       </div>
 
+      {loading && <p className="text-center py-10 text-ink-muted">Loading your wardrobe...</p>}
       <div className="grid grid-cols-4 gap-5">
-        {items.map((it) => (
-          <ItemTile key={it.id} item={it} />
+        {!loading && items.map((it) => (
+          <ItemTile key={it.id} item={it} onDelete={() => deleteItem(it.id)} onToggleStatus={(id, status) => toggleStatus(id, status)} />
         ))}
       </div>
     </div>

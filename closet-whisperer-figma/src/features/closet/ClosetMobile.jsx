@@ -3,8 +3,8 @@ import { Search } from 'lucide-react';
 import ItemTile from '../../components/ui/ItemTile.jsx';
 import { useClosetFilters, CATEGORIES } from './useClosetFilters.js';
 
-export default function ClosetMobile({ onNavigate }) {
-  const { query, setQuery, category, setCategory, items } = useClosetFilters();
+export default function ClosetMobile({ user, onNavigate }) {
+  const { query, setQuery, category, setCategory, items, loading, deleteItem, toggleStatus } = useClosetFilters(user);
   return (
     <div className="px-5 flex flex-col gap-5">
       <header className="flex items-center justify-between">
@@ -43,11 +43,12 @@ export default function ClosetMobile({ onNavigate }) {
         ))}
       </div>
 
+      {loading && <p className="text-center py-10 text-ink-muted">Loading your wardrobe...</p>}
       <p className="text-sm text-ink-muted">{items.length} pieces</p>
 
       <div className="grid grid-cols-2 gap-3">
-        {items.map((it) => (
-          <ItemTile key={it.id} item={it} compact />
+        {!loading && items.map((it) => (
+          <ItemTile key={it.id} item={it} compact onDelete={() => deleteItem(it.id)} onToggleStatus={(id, status) => toggleStatus(id, status)} />
         ))}
       </div>
     </div>

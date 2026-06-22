@@ -1,7 +1,7 @@
 import React from 'react';
 import AddItemForm from './AddItemForm.jsx';
 
-export default function AddItemDesktop() {
+export default function AddItemDesktop({ user, onNavigate }) {
   return (
     <div className="px-10 py-10 max-w-[1100px] mx-auto flex flex-col gap-8">
       <header className="flex flex-col gap-1">
@@ -13,7 +13,7 @@ export default function AddItemDesktop() {
         </p>
       </header>
       <div className="bg-white border border-border-subtle rounded-lg p-8 shadow-card">
-        <AddItemForm />
+        <AddItemForm user={user} onNavigate={onNavigate} />
       </div>
     </div>
   );

@@ -42,6 +42,8 @@ export default function App() {
     }
   });
   const [active, setActive] = useState('dashboard');
+  const [currentOutfit, setCurrentOutfit] = useState(null);
+  const [outfitItemsMap, setOutfitItemsMap] = useState({});
   const [config, setConfig] = useState({
     brandName: 'The Closet Whisperer',
     brandIcon: '✨',
@@ -98,6 +100,9 @@ export default function App() {
         onNavigate={setActive}
         config={config}
         onConfigChange={setConfig}
+        currentOutfit={currentOutfit}
+        outfitItemsMap={outfitItemsMap}
+        onOutfitChange={(o, map) => { setCurrentOutfit(o); setOutfitItemsMap(map ?? {}); }}
       />
     </Shell>
   );

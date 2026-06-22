@@ -51,7 +51,17 @@ export function useAuthForm({ onAuth, config }) {
           { stylePreference: 'Casual', thermalSensitivity: 'NEUTRAL' },
         );
       }
-      onAuth(mapUser(result, form.password));
+      const mapped = mapUser(result, form.password);
+      if (mapped.role !== 'ADMIN') {
+        const authObj = {
+          userSystemID: result?.userId?.systemId ?? SYSTEM_ID,
+          userEmail: result?.userId?.email ?? result?.email,
+          userPassword: form.password
+        };
+        const profile = await profileApi.getProfileByEmail(authObj);
+        mapped.profileId = profile?.id?.objectId ?? null;
+      }
+      onAuth(mapped);
     } catch (err) {
       console.error(err);
       let msg = err?.payload?.message || err?.message || '';

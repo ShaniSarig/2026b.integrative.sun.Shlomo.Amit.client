@@ -3,9 +3,12 @@ import ProfileForm from './ProfileForm.jsx';
 import PersonaCard from './PersonaCard.jsx';
 import PersonalInfoForm from './PersonalInfoForm.jsx';
 import ProfileTabs from './ProfileTabs.jsx';
+import { useProfile } from '../../hooks/useProfile.js';
 
 export default function ProfileMobile({ user }) {
   const [tab, setTab] = useState('personal');
+  const { profile, loading, saving, saveBiometrics, savePreferences } = useProfile(user);
+
   return (
     <div className="px-5 flex flex-col gap-5">
       <header className="flex flex-col gap-1">
@@ -22,7 +25,17 @@ export default function ProfileMobile({ user }) {
       ) : (
         <>
           <PersonaCard user={user} />
-          <ProfileForm />
+          {loading ? (
+            <p className="text-ink-muted text-sm">Loading profile…</p>
+          ) : (
+            <ProfileForm
+              user={user}
+              profile={profile}
+              saving={saving}
+              onSaveBiometrics={saveBiometrics}
+              onSavePreferences={savePreferences}
+            />
+          )}
         </>
       )}
     </div>
