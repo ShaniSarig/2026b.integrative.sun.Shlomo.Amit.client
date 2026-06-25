@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { adminApi } from '../../api/closetApi.js';
 import Badge from '../../components/ui/Badge.jsx';
 import Metric from '../../components/ui/Metric.jsx';
-import { Users, AlertTriangle, Activity, Settings, BarChart2, Shield, Trash2, Save, RefreshCw } from 'lucide-react';
+import { Users, AlertTriangle, Activity, Settings, BarChart2, Shield, Trash2, Save, RefreshCw, Zap } from 'lucide-react';
 
 export default function AdminMobile({ user, config, onConfigChange }) {
   const [activeTab, setActiveTab] = useState('settings');
@@ -28,6 +28,10 @@ export default function AdminMobile({ user, config, onConfigChange }) {
   const [commandsList, setCommandsList] = useState([]);
   const [objectsList, setObjectsList] = useState([]);
 
+  // Grok health
+  const [grokStatus, setGrokStatus] = useState(null);
+  const [grokChecking, setGrokChecking] = useState(false);
+
   const auth = {
     userSystemID: user?.systemId || 'ambient_invisible_intelligence',
     userEmail: user?.email || '',
@@ -37,8 +41,21 @@ export default function AdminMobile({ user, config, onConfigChange }) {
   useEffect(() => {
     if (user) {
       loadTelemetryData();
+      if (activeTab === 'ai-health') checkGrokStatus();
     }
   }, [user, activeTab]);
+
+  const checkGrokStatus = async () => {
+    setGrokChecking(true);
+    try {
+      const result = await adminApi.getGrokStatus(auth);
+      setGrokStatus(result);
+    } catch (err) {
+      setGrokStatus({ status: 'network_error', message: err?.message || 'Failed to reach backend', model: 'grok-beta', checkedAt: new Date().toISOString() });
+    } finally {
+      setGrokChecking(false);
+    }
+  };
 
   const loadTelemetryData = async () => {
     setLoading(true);
@@ -160,6 +177,15 @@ export default function AdminMobile({ user, config, onConfigChange }) {
         >
           <BarChart2 size={14} />
           Analytics
+        </button>
+        <button
+          onClick={() => setActiveTab('ai-health')}
+          className={`flex-1 pb-3 text-center border-b-2 font-medium transition-all flex justify-center items-center gap-1.5 ${
+            activeTab === 'ai-health' ? 'border-primary-500 text-primary-600 font-semibold' : 'border-transparent text-ink-muted'
+          }`}
+        >
+          <Zap size={14} />
+          AI
         </button>
       </div>
 
@@ -342,6 +368,98 @@ export default function AdminMobile({ user, config, onConfigChange }) {
               );
             })
           )}
+        </div>
+      )}
+
+      {/* AI Health Tab */}
+      {activeTab === 'ai-health' && (
+        <div className="flex flex-col gap-4">
+          <div className="bg-white border border-border-subtle rounded-md p-4 flex flex-col gap-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display font-semibold text-base text-ink-primary flex items-center gap-2">
+                <Zap size={16} className="text-primary-500" />
+                Grok AI Health
+              </h2>
+              <button
+                onClick={checkGrokStatus}
+                disabled={grokChecking}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded text-xs font-semibold disabled:opacity-50"
+              >
+                <RefreshCw size={12} className={grokChecking ? 'animate-spin' : ''} />
+                {grokChecking ? 'Checking…' : 'Check Now'}
+              </button>
+            </div>
+
+            {!grokStatus && !grokChecking && (
+              <p className="text-xs text-ink-muted text-center py-4">Tap "Check Now" to test the Grok API.</p>
+            )}
+
+            {grokChecking && (
+              <div className="flex items-center justify-center py-6 gap-2 text-ink-muted">
+                <RefreshCw size={16} className="animate-spin text-primary-500" />
+                <span className="text-xs">Pinging Grok API…</span>
+              </div>
+            )}
+
+            {grokStatus && !grokChecking && (() => {
+              const statusMeta = {
+                ok:             { label: 'Operational',    bg: 'bg-green-50',  border: 'border-green-200',  text: 'text-green-800',  dot: 'bg-green-500'  },
+                not_configured: { label: 'Not Configured', bg: 'bg-gray-50',   border: 'border-gray-200',   text: 'text-gray-700',   dot: 'bg-gray-400'   },
+                invalid_key:    { label: 'Invalid Key',    bg: 'bg-red-50',    border: 'border-red-200',    text: 'text-red-800',    dot: 'bg-red-500'    },
+                no_credits:     { label: 'No Credits',     bg: 'bg-amber-50',  border: 'border-amber-200',  text: 'text-amber-800',  dot: 'bg-amber-500'  },
+                rate_limited:   { label: 'Rate Limited',   bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-800', dot: 'bg-yellow-500' },
+                network_error:  { label: 'Network Error',  bg: 'bg-red-50',    border: 'border-red-200',    text: 'text-red-800',    dot: 'bg-red-500'    },
+                server_error:   { label: 'Server Error',   bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-800', dot: 'bg-orange-500' },
+              };
+              const meta = statusMeta[grokStatus.status] || statusMeta.server_error;
+              return (
+                <div className="flex flex-col gap-3">
+                  <div className={`flex items-start gap-3 p-3 rounded-md border ${meta.bg} ${meta.border}`}>
+                    <span className={`mt-1 w-2.5 h-2.5 rounded-full flex-shrink-0 ${meta.dot} ${grokStatus.status === 'ok' ? 'animate-pulse' : ''}`} />
+                    <div>
+                      <p className={`font-semibold text-sm ${meta.text}`}>{meta.label}</p>
+                      <p className={`text-xs mt-0.5 ${meta.text} opacity-80`}>{grokStatus.message}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-canvas border border-border-subtle rounded p-3 flex flex-col gap-0.5">
+                      <span className="text-ink-muted uppercase tracking-wide text-[10px]">Model</span>
+                      <span className="font-bold text-ink-primary font-mono">{grokStatus.model || '—'}</span>
+                    </div>
+                    <div className="bg-canvas border border-border-subtle rounded p-3 flex flex-col gap-0.5">
+                      <span className="text-ink-muted uppercase tracking-wide text-[10px]">Latency</span>
+                      <span className="font-bold text-ink-primary">{grokStatus.latencyMs != null ? `${grokStatus.latencyMs}ms` : '—'}</span>
+                    </div>
+                  </div>
+
+                  {grokStatus.tokenUsage && (
+                    <div className="bg-canvas border border-border-subtle rounded p-3 flex flex-col gap-2">
+                      <p className="text-[10px] font-semibold text-ink-muted uppercase tracking-wide">Token Usage (probe)</p>
+                      <div className="flex gap-4 text-xs">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-ink-muted">Prompt</span>
+                          <span className="font-bold text-ink-primary">{grokStatus.tokenUsage.promptTokens ?? '—'}</span>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-ink-muted">Completion</span>
+                          <span className="font-bold text-ink-primary">{grokStatus.tokenUsage.completionTokens ?? '—'}</span>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-ink-muted">Total</span>
+                          <span className="font-bold text-primary-600">{grokStatus.tokenUsage.totalTokens ?? '—'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-[10px] text-ink-muted">
+                    Checked at {grokStatus.checkedAt ? new Date(grokStatus.checkedAt).toLocaleTimeString() : '—'}. Credit balance visible at console.x.ai.
+                  </p>
+                </div>
+              );
+            })()}
+          </div>
         </div>
       )}
 

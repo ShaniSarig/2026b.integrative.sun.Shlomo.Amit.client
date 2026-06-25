@@ -5,41 +5,18 @@ import Button from '../../components/ui/Button.jsx';
 import { useOutfit } from '../../hooks/useOutfit.js';
 
 export default function OutfitsDesktop({ user, currentOutfit, outfitItemsMap, onOutfitChange }) {
-  const { outfit, itemsMap, loading, error, generate, confirm, rate, remove } = useOutfit(user);
+  const { outfit, itemsMap, loading, error, generate, confirm, rateItem, regenerate } = useOutfit(user);
 
-  // Sync incoming outfit from parent (e.g. generated on dashboard)
-  useEffect(() => {
-    if (currentOutfit && !outfit) {
-      // The hook manages its own state; parent outfit is just for initialisation hint.
-      // We don't forcibly set it here — the user can generate fresh or see current.
-    }
-  }, []);
-
-  // Propagate changes upward
   useEffect(() => {
     onOutfitChange?.(outfit, itemsMap);
   }, [outfit, itemsMap]);
-
-  const handleGenerate = () => generate();
-
-  const handleConfirm = async () => {
-    await confirm();
-  };
-
-  const handleRate = async (score) => {
-    await rate(score);
-  };
-
-  const handleDelete = async () => {
-    await remove();
-  };
 
   const displayOutfit = outfit ?? currentOutfit;
   const displayMap = outfit ? itemsMap : (outfitItemsMap ?? {});
 
   return (
-    <div className="px-10 py-10 max-w-[1400px] mx-auto flex flex-col gap-6">
-      <header className="flex items-end justify-between">
+    <div className="h-full flex flex-col">
+      <header className="flex items-end justify-between px-10 pt-10 pb-4 shrink-0">
         <div>
           <h1 className="font-display font-bold text-5xl text-ink-primary leading-tight">
             Today's look
@@ -48,41 +25,38 @@ export default function OutfitsDesktop({ user, currentOutfit, outfitItemsMap, on
             Your AI-curated outfit for today
           </p>
         </div>
-        <Button variant="secondary" onClick={handleGenerate} disabled={loading}>
-          {loading ? 'Generating…' : 'Generate new'}
-        </Button>
       </header>
 
       {error && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-4 py-3">
+        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md mx-10 mb-4 px-4 py-3 shrink-0">
           {error}
         </p>
       )}
 
       {loading && (
-        <div className="flex items-center justify-center py-20 text-ink-muted gap-2">
+        <div className="flex-1 flex items-center justify-center text-ink-muted gap-2">
           <Sparkles size={18} className="animate-pulse" />
           <span>Finding the perfect outfit…</span>
         </div>
       )}
 
       {!loading && !displayOutfit && (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <div className="flex-1 flex flex-col items-center justify-center gap-4">
           <Sparkles size={40} className="text-brand-accent opacity-50" />
           <p className="text-ink-muted text-lg">No outfit yet. Let the AI pick one for you!</p>
-          <Button onClick={handleGenerate}>Generate outfit</Button>
+          <Button onClick={() => generate()}>Generate outfit</Button>
         </div>
       )}
 
       {!loading && displayOutfit && (
-        <div className="max-w-xl">
+        <div className="flex-1 px-10 pb-10 min-h-0">
           <OutfitCard
             outfit={displayOutfit}
             itemsMap={displayMap}
             large
-            onConfirm={handleConfirm}
-            onRate={handleRate}
-            onDelete={handleDelete}
+            onConfirm={() => confirm(displayOutfit?.id?.id)}
+            onRegenerate={() => regenerate(displayOutfit?.id?.id)}
+            onRateItem={(itemId, score) => rateItem(displayOutfit?.id?.id, itemId, score)}
           />
         </div>
       )}

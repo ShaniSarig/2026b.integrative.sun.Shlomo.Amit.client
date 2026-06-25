@@ -138,6 +138,12 @@ export const recommendationApi = {
       method: "PUT",
     }),
 
+  // PUT /outfits/{outfitId}/items/{itemId}/rate?score=&userSystemID=&userEmail=&userPassword=
+  rateOutfitItem: (outfitId, itemId, score, auth) =>
+    apiRequest(`/outfits/${outfitId}/items/${itemId}/rate${qs({ score, ...auth })}`, {
+      method: "PUT",
+    }),
+
   // DELETE /outfits/{outfitId}?userSystemID=&userEmail=&userPassword=
   deleteOutfit: (outfitId, auth) =>
     apiRequest(`/outfits/${outfitId}${qs(auth)}`, { method: "DELETE" }),
@@ -149,6 +155,10 @@ export const historyApi = {
   // GET /outfits/history?userId=&userSystemID=&userEmail=&userPassword=&page=&size=
   listWearHistory: (auth, userId, page = 0, size = 20) =>
     apiRequest(`/outfits/history${qs({ userId, ...auth, page, size })}`),
+
+  // PUT /outfits/{outfitId}/rate?score=&userSystemID=&userEmail=&userPassword=
+  rateOutfit: (outfitId, score, auth) =>
+    apiRequest(`/outfits/${outfitId}/rate${qs({ score, ...auth })}`, { method: "PUT" }),
 };// ── Admin ─────────────────────────────────────────────────────────────────────
 
 export const adminApi = {
@@ -198,6 +208,14 @@ export const adminApi = {
     apiRequest(`/admin/users/${targetSystemId}/${targetEmail}${qs(auth)}`, {
       method: "DELETE",
     }),
+
+  // GET /admin/grok-status?userSystemID=&userEmail=&userPassword=
+  getGrokStatus: (auth) =>
+    apiRequest(`/admin/grok-status${qs(auth)}`),
+
+  // GET /admin/openai-status?userSystemID=&userEmail=&userPassword=
+  getOpenAiStatus: (auth) =>
+    apiRequest(`/admin/openai-status${qs(auth)}`),
 };
 
 // ── Commands ─────────────────────────────────────────────────────────────────

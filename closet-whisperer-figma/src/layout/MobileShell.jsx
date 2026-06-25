@@ -24,7 +24,7 @@ export default function MobileShell({ active, onNavigate, onSignOut, user, child
           </button>
         </div>
       </header>
-      <main className="flex-1 pb-24">{children}</main>
+      <main className="flex-1 pb-24 flex flex-col">{children}</main>
       <nav className="fixed bottom-0 inset-x-0 bg-white border-t border-border-subtle pb-safe">
         <ul className="flex items-stretch justify-between px-2 py-2">
           {mobileNav.map(({ id, label, icon: Icon }) => {

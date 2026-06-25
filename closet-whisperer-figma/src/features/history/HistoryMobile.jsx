@@ -1,29 +1,16 @@
 import React from 'react';
-import Badge from '../../components/ui/Badge.jsx';
+import { Shirt } from 'lucide-react';
 import { useHistory } from '../../hooks/useHistory.js';
-
-function formatDay(dateStr) {
-  if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  });
-}
-
-function formatOutfit(h) {
-  if (!h.items || h.items.length === 0) return '—';
-  return h.items.map((it) => it.role || 'Item').join(', ');
-}
+import HistoryCard from './HistoryCard.jsx';
 
 export default function HistoryMobile({ user }) {
-  const { history, loading, error } = useHistory(user);
+  const { history, itemsMap, loading, error, rate } = useHistory(user);
 
   return (
-    <div className="px-5 flex flex-col gap-5">
+    <div className="px-5 pb-5 flex flex-col gap-5">
       <header className="flex flex-col gap-1">
         <h1 className="font-display font-bold text-3xl text-ink-primary">Wear history</h1>
-        <p className="text-sm text-ink-muted">Track which looks you've worn lately.</p>
+        <p className="text-sm text-ink-muted">Every outfit you've confirmed, with ratings.</p>
       </header>
 
       {error && (
@@ -37,29 +24,24 @@ export default function HistoryMobile({ user }) {
       )}
 
       {!loading && history.length === 0 && !error && (
-        <p className="text-center py-10 text-ink-muted">No wear history yet.</p>
+        <div className="flex flex-col items-center justify-center py-16 gap-3 text-ink-muted">
+          <Shirt size={32} className="opacity-30" />
+          <p className="text-sm">No wear history yet. Confirm an outfit to start tracking!</p>
+        </div>
       )}
 
-      <ul className="flex flex-col gap-3">
-        {!loading && history.map((h) => (
-          <li
-            key={h.id?.id ?? h.dateCreated}
-            className="bg-white border border-border-subtle rounded-md p-4 flex flex-col gap-2"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wide text-ink-muted">
-                {formatDay(h.dateCreated)}
-              </span>
-              <div className="flex gap-1">
-                {h.userRating === 'LIKE' && <Badge tone="good">Liked</Badge>}
-                {h.userRating === 'DISLIKE' && <Badge tone="warn">Disliked</Badge>}
-                {h.confirmed && <Badge tone="good">✓</Badge>}
-              </div>
-            </div>
-            <p className="font-display font-semibold text-base text-ink-primary">{formatOutfit(h)}</p>
-          </li>
-        ))}
-      </ul>
+      {!loading && history.length > 0 && (
+        <div className="flex flex-col gap-3">
+          {history.map((h) => (
+            <HistoryCard
+              key={h.id?.objectId ?? h.dateCreated}
+              entry={h}
+              itemsMap={itemsMap}
+              onRate={rate}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -21,12 +21,17 @@ export function useOutfit(user) {
     setLoading(true);
     setError(null);
     try {
-      const [newOutfit, items] = await Promise.all([
-        recommendationApi.generateOutfit(auth, user.profileId, hints),
-        inventoryApi.listItems(auth, user.profileId, 0, 100, true),
-      ]);
+      // Check inventory first — friendly message if closet is empty
+      const items = await inventoryApi.listItems(auth, user.profileId, 0, 100, true);
+      if (!items || items.length === 0) {
+        setError('Your closet is empty. Add some clothes first to generate an outfit!');
+        return;
+      }
+
+      const newOutfit = await recommendationApi.generateOutfit(auth, user.profileId, hints);
+
       const map = {};
-      (items || []).forEach((it) => {
+      items.forEach((it) => {
         if (it.id?.objectId) map[it.id.objectId] = it;
       });
       setItemsMap(map);
@@ -40,38 +45,40 @@ export function useOutfit(user) {
     }
   }, [auth, user?.profileId]);
 
-  const confirm = useCallback(async () => {
-    if (!auth || !outfit?.id?.id) return;
+  // outfitId passed explicitly so callbacks never close over stale state
+  const confirm = useCallback(async (outfitId) => {
+    if (!auth || !outfitId) return;
     try {
-      const updated = await recommendationApi.confirmOutfit(outfit.id.id, auth);
-      setOutfit(updated ?? { ...outfit, confirmed: true });
+      const updated = await recommendationApi.confirmOutfit(outfitId, auth);
+      setOutfit((prev) => updated ?? { ...prev, confirmed: true });
     } catch (err) {
       console.error('Failed to confirm outfit', err);
       setError(err?.message || 'Failed to confirm outfit');
     }
-  }, [auth, outfit]);
+  }, [auth]);
 
-  const rate = useCallback(async (score) => {
-    if (!auth || !outfit?.id?.id) return;
-    try {
-      const updated = await recommendationApi.rateOutfit(outfit.id.id, score, auth);
-      setOutfit(updated ?? { ...outfit, userRating: score > 0 ? 'LIKE' : 'DISLIKE' });
-    } catch (err) {
-      console.error('Failed to rate outfit', err);
-      setError(err?.message || 'Failed to rate outfit');
+  const regenerate = useCallback(async (outfitId, hints) => {
+    if (!auth) return;
+    // Delete current outfit if there is one
+    if (outfitId) {
+      try {
+        await recommendationApi.deleteOutfit(outfitId, auth);
+      } catch {
+        // continue even if delete fails
+      }
     }
-  }, [auth, outfit]);
+    setOutfit(null);
+    return generate(hints);
+  }, [auth, generate]);
 
-  const remove = useCallback(async () => {
-    if (!auth || !outfit?.id?.id) return;
+  const rateItem = useCallback(async (outfitId, itemId, score) => {
+    if (!auth || !outfitId || score === 0) return;
     try {
-      await recommendationApi.deleteOutfit(outfit.id.id, auth);
-      setOutfit(null);
+      await recommendationApi.rateOutfitItem(outfitId, itemId, score, auth);
     } catch (err) {
-      console.error('Failed to delete outfit', err);
-      setError(err?.message || 'Failed to delete outfit');
+      console.error('Failed to rate outfit item', err);
     }
-  }, [auth, outfit]);
+  }, [auth]);
 
-  return { outfit, itemsMap, loading, error, generate, confirm, rate, remove };
+  return { outfit, itemsMap, loading, error, generate, confirm, regenerate, rateItem };
 }
