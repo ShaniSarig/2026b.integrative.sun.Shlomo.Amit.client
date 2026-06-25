@@ -36,6 +36,10 @@ export default function AdminDesktop({ user, config, onConfigChange }) {
   const [openAiStatus, setOpenAiStatus] = useState(null);
   const [openAiChecking, setOpenAiChecking] = useState(false);
 
+  // Weather health
+  const [weatherStatus, setWeatherStatus] = useState(null);
+  const [weatherChecking, setWeatherChecking] = useState(false);
+
   // Auth queries helper
   const auth = {
     userSystemID: user?.systemId || 'ambient_invisible_intelligence',
@@ -46,7 +50,7 @@ export default function AdminDesktop({ user, config, onConfigChange }) {
   useEffect(() => {
     if (user) {
       loadTelemetryData();
-      if (activeTab === 'ai-health') { checkGrokStatus(); checkOpenAiStatus(); }
+      if (activeTab === 'ai-health') { checkGrokStatus(); checkOpenAiStatus(); checkWeatherStatus(); }
     }
   }, [user, activeTab]);
 
@@ -71,6 +75,18 @@ export default function AdminDesktop({ user, config, onConfigChange }) {
       setOpenAiStatus({ status: 'network_error', message: err?.message || 'Failed to reach backend', model: 'gpt-4o', checkedAt: new Date().toISOString() });
     } finally {
       setOpenAiChecking(false);
+    }
+  };
+
+  const checkWeatherStatus = async () => {
+    setWeatherChecking(true);
+    try {
+      const result = await adminApi.getWeatherStatus(auth);
+      setWeatherStatus(result);
+    } catch (err) {
+      setWeatherStatus({ status: 'network_error', message: err?.message || 'Failed to reach backend', checkedAt: new Date().toISOString() });
+    } finally {
+      setWeatherChecking(false);
     }
   };
 
@@ -660,6 +676,79 @@ export default function AdminDesktop({ user, config, onConfigChange }) {
 
                   <p className="text-xs text-ink-muted">
                     Usage is billed via your <span className="font-semibold">OpenAI account</span> at platform.openai.com. The figures above reflect usage from this health-check probe only.
+                  </p>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Weather Card */}
+          <div className="bg-white border border-border-subtle rounded-lg shadow-card p-8 flex flex-col gap-6">
+            <div className="flex justify-between items-center border-b pb-4">
+              <div>
+                <h2 className="font-display font-semibold text-2xl text-ink-primary flex items-center gap-2">
+                  <Zap size={22} className="text-sky-500" />
+                  OpenWeatherMap Integration Health
+                </h2>
+                <p className="text-sm text-ink-muted mt-1">Live connectivity check against the OpenWeatherMap API</p>
+              </div>
+              <button
+                onClick={checkWeatherStatus}
+                disabled={weatherChecking}
+                className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-md text-sm font-semibold shadow-sm disabled:opacity-50 transition-all"
+              >
+                <RefreshCw size={16} className={weatherChecking ? 'animate-spin' : ''} />
+                {weatherChecking ? 'Checking…' : 'Run Health Check'}
+              </button>
+            </div>
+
+            {!weatherStatus && !weatherChecking && (
+              <p className="text-sm text-ink-muted text-center py-8">Click "Run Health Check" to test the OpenWeatherMap API connection.</p>
+            )}
+
+            {weatherChecking && (
+              <div className="flex items-center justify-center py-12 gap-3 text-ink-muted">
+                <RefreshCw size={20} className="animate-spin text-sky-500" />
+                <span className="text-sm">Pinging OpenWeatherMap API…</span>
+              </div>
+            )}
+
+            {weatherStatus && !weatherChecking && (() => {
+              const statusMeta = {
+                ok:             { label: 'Operational',    bg: 'bg-green-50',  border: 'border-green-200',  text: 'text-green-800',  dot: 'bg-green-500'  },
+                not_configured: { label: 'Not Configured', bg: 'bg-gray-50',   border: 'border-gray-200',   text: 'text-gray-700',   dot: 'bg-gray-400'   },
+                invalid_key:    { label: 'Invalid Key',    bg: 'bg-red-50',    border: 'border-red-200',    text: 'text-red-800',    dot: 'bg-red-500'    },
+                network_error:  { label: 'Network Error',  bg: 'bg-red-50',    border: 'border-red-200',    text: 'text-red-800',    dot: 'bg-red-500'    },
+                server_error:   { label: 'Server Error',   bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-800', dot: 'bg-orange-500' },
+              };
+              const meta = statusMeta[weatherStatus.status] || statusMeta.server_error;
+              return (
+                <div className="flex flex-col gap-6">
+                  <div className={`flex items-start gap-4 p-5 rounded-lg border ${meta.bg} ${meta.border}`}>
+                    <span className={`mt-1 w-3 h-3 rounded-full flex-shrink-0 ${meta.dot} ${weatherStatus.status === 'ok' ? 'animate-pulse' : ''}`} />
+                    <div>
+                      <p className={`font-semibold text-base ${meta.text}`}>{meta.label}</p>
+                      <p className={`text-sm mt-0.5 ${meta.text} opacity-80`}>{weatherStatus.message}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-canvas border border-border-subtle rounded-lg p-5 flex flex-col gap-1">
+                      <span className="text-xs font-semibold text-ink-muted uppercase tracking-wide">Latency</span>
+                      <span className="text-lg font-bold text-ink-primary">
+                        {weatherStatus.latencyMs != null ? `${weatherStatus.latencyMs} ms` : '—'}
+                      </span>
+                    </div>
+                    <div className="bg-canvas border border-border-subtle rounded-lg p-5 flex flex-col gap-1">
+                      <span className="text-xs font-semibold text-ink-muted uppercase tracking-wide">Last Checked</span>
+                      <span className="text-sm font-medium text-ink-primary">
+                        {weatherStatus.checkedAt ? new Date(weatherStatus.checkedAt).toLocaleTimeString() : '—'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-ink-muted">
+                    API key is configured via <span className="font-semibold">.env</span> (closetwhisperer.weather.api-key). Manage your quota at openweathermap.org.
                   </p>
                 </div>
               );

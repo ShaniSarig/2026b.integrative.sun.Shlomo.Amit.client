@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Sparkles, Thermometer, RefreshCcw, ChevronRight } from 'lucide-react';
-import { demoWeather } from '../../data/mockData.js';
-import { inventoryApi, historyApi } from '../../api/closetApi.js';
+import { inventoryApi, historyApi, weatherApi } from '../../api/closetApi.js';
 import Metric from '../../components/ui/Metric.jsx';
 import ItemTile from '../../components/ui/ItemTile.jsx';
 import OutfitHero from './OutfitHero.jsx';
@@ -22,6 +21,7 @@ export default function DashboardDesktop({ user, onNavigate, currentOutfit, outf
   const [latelyWorn, setLatelyWorn] = useState([]);
   const [itemsLoading, setItemsLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [weather, setWeather] = useState(null);
 
   const auth = useMemo(() => {
     if (!user) return null;
@@ -74,6 +74,34 @@ export default function DashboardDesktop({ user, onNavigate, currentOutfit, outf
       .finally(() => setHistoryLoading(false));
   }, [auth, user?.profileId]);
 
+  useEffect(() => {
+    if (!auth) return;
+    const fetchWeather = (lat, lon) => {
+      weatherApi.getWeather(auth, lat, lon)
+        .then((data) => {
+          setWeather({
+            location: data.city || 'Unknown',
+            temp: Math.round(data.temperature ?? 0),
+            condition: data.condition || '—',
+            humidity: data.humidity ?? '—',
+            uvIndex: '—',
+            windSpeed: Math.round((data.wind_speed ?? 0) * 3.6),
+            feelsLike: Math.round(data.feelsLike ?? 0),
+          });
+        })
+        .catch(() => setWeather(null));
+    };
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude),
+        () => fetchWeather(32.0833, 34.8),
+        { timeout: 5000 }
+      );
+    } else {
+      fetchWeather(32.0833, 34.8);
+    }
+  }, [auth]);
+
   const outfitForHero = currentOutfit
     ? {
         title: currentOutfit.dateCreated
@@ -98,7 +126,7 @@ export default function DashboardDesktop({ user, onNavigate, currentOutfit, outf
         </div>
         <div className="text-right">
           <p className="text-sm text-ink-muted">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
-          <p className="font-display font-semibold text-2xl text-ink-primary">{demoWeather.temp}° · {demoWeather.location}</p>
+          <p className="font-display font-semibold text-2xl text-ink-primary">{weather ? `${weather.temp}° · ${weather.location}` : '—'}</p>
         </div>
       </header>
 
@@ -142,7 +170,7 @@ export default function DashboardDesktop({ user, onNavigate, currentOutfit, outf
         </div>
 
         <aside className="flex flex-col gap-6">
-          <WeatherCard weather={demoWeather} />
+          {weather && <WeatherCard weather={weather} />}
           <section className="flex flex-col gap-3">
             <h2 className="font-display font-bold text-lg text-ink-primary">Lately worn</h2>
             {historyLoading && <p className="text-sm text-ink-muted">Loading…</p>}

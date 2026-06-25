@@ -32,6 +32,10 @@ export default function AdminMobile({ user, config, onConfigChange }) {
   const [grokStatus, setGrokStatus] = useState(null);
   const [grokChecking, setGrokChecking] = useState(false);
 
+  // Weather health
+  const [weatherStatus, setWeatherStatus] = useState(null);
+  const [weatherChecking, setWeatherChecking] = useState(false);
+
   const auth = {
     userSystemID: user?.systemId || 'ambient_invisible_intelligence',
     userEmail: user?.email || '',
@@ -41,7 +45,7 @@ export default function AdminMobile({ user, config, onConfigChange }) {
   useEffect(() => {
     if (user) {
       loadTelemetryData();
-      if (activeTab === 'ai-health') checkGrokStatus();
+      if (activeTab === 'ai-health') { checkGrokStatus(); checkWeatherStatus(); }
     }
   }, [user, activeTab]);
 
@@ -54,6 +58,18 @@ export default function AdminMobile({ user, config, onConfigChange }) {
       setGrokStatus({ status: 'network_error', message: err?.message || 'Failed to reach backend', model: 'grok-beta', checkedAt: new Date().toISOString() });
     } finally {
       setGrokChecking(false);
+    }
+  };
+
+  const checkWeatherStatus = async () => {
+    setWeatherChecking(true);
+    try {
+      const result = await adminApi.getWeatherStatus(auth);
+      setWeatherStatus(result);
+    } catch (err) {
+      setWeatherStatus({ status: 'network_error', message: err?.message || 'Failed to reach backend', checkedAt: new Date().toISOString() });
+    } finally {
+      setWeatherChecking(false);
     }
   };
 
@@ -456,6 +472,68 @@ export default function AdminMobile({ user, config, onConfigChange }) {
                   <p className="text-[10px] text-ink-muted">
                     Checked at {grokStatus.checkedAt ? new Date(grokStatus.checkedAt).toLocaleTimeString() : '—'}. Credit balance visible at console.x.ai.
                   </p>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Weather Card */}
+          <div className="bg-white border border-border-subtle rounded-md p-4 flex flex-col gap-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display font-semibold text-base text-ink-primary flex items-center gap-2">
+                <Zap size={16} className="text-sky-500" />
+                Weather API Health
+              </h2>
+              <button
+                onClick={checkWeatherStatus}
+                disabled={weatherChecking}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded text-xs font-semibold disabled:opacity-50"
+              >
+                <RefreshCw size={12} className={weatherChecking ? 'animate-spin' : ''} />
+                {weatherChecking ? 'Checking…' : 'Check Now'}
+              </button>
+            </div>
+
+            {!weatherStatus && !weatherChecking && (
+              <p className="text-xs text-ink-muted text-center py-4">Tap "Check Now" to test the Weather API.</p>
+            )}
+
+            {weatherChecking && (
+              <div className="flex items-center justify-center py-6 gap-2 text-ink-muted">
+                <RefreshCw size={16} className="animate-spin text-sky-500" />
+                <span className="text-xs">Pinging OpenWeatherMap…</span>
+              </div>
+            )}
+
+            {weatherStatus && !weatherChecking && (() => {
+              const statusMeta = {
+                ok:             { label: 'Operational',    bg: 'bg-green-50',  border: 'border-green-200',  text: 'text-green-800',  dot: 'bg-green-500'  },
+                not_configured: { label: 'Not Configured', bg: 'bg-gray-50',   border: 'border-gray-200',   text: 'text-gray-700',   dot: 'bg-gray-400'   },
+                invalid_key:    { label: 'Invalid Key',    bg: 'bg-red-50',    border: 'border-red-200',    text: 'text-red-800',    dot: 'bg-red-500'    },
+                network_error:  { label: 'Network Error',  bg: 'bg-red-50',    border: 'border-red-200',    text: 'text-red-800',    dot: 'bg-red-500'    },
+                server_error:   { label: 'Server Error',   bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-800', dot: 'bg-orange-500' },
+              };
+              const meta = statusMeta[weatherStatus.status] || statusMeta.server_error;
+              return (
+                <div className="flex flex-col gap-3">
+                  <div className={`flex items-start gap-3 p-3 rounded-md border ${meta.bg} ${meta.border}`}>
+                    <span className={`mt-1 w-2.5 h-2.5 rounded-full flex-shrink-0 ${meta.dot} ${weatherStatus.status === 'ok' ? 'animate-pulse' : ''}`} />
+                    <div>
+                      <p className={`font-semibold text-sm ${meta.text}`}>{meta.label}</p>
+                      <p className={`text-xs mt-0.5 ${meta.text} opacity-80`}>{weatherStatus.message}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-canvas border border-border-subtle rounded p-3 flex flex-col gap-0.5">
+                      <span className="text-ink-muted uppercase tracking-wide text-[10px]">Latency</span>
+                      <span className="font-bold text-ink-primary">{weatherStatus.latencyMs != null ? `${weatherStatus.latencyMs}ms` : '—'}</span>
+                    </div>
+                    <div className="bg-canvas border border-border-subtle rounded p-3 flex flex-col gap-0.5">
+                      <span className="text-ink-muted uppercase tracking-wide text-[10px]">Checked At</span>
+                      <span className="font-bold text-ink-primary">{weatherStatus.checkedAt ? new Date(weatherStatus.checkedAt).toLocaleTimeString() : '—'}</span>
+                    </div>
+                  </div>
                 </div>
               );
             })()}

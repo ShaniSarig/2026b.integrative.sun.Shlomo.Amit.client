@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Sparkles, Thermometer, RefreshCcw, ChevronRight } from 'lucide-react';
-import { demoWeather } from '../../data/mockData.js';
-import { inventoryApi, historyApi } from '../../api/closetApi.js';
+import { inventoryApi, historyApi, weatherApi } from '../../api/closetApi.js';
 import Metric from '../../components/ui/Metric.jsx';
 import ItemTile from '../../components/ui/ItemTile.jsx';
 import OutfitHero from './OutfitHero.jsx';
@@ -22,6 +21,7 @@ export default function DashboardMobile({ user, onNavigate, currentOutfit, outfi
   const [latelyWorn, setLatelyWorn] = useState([]);
   const [itemsLoading, setItemsLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [weather, setWeather] = useState(null);
 
   const auth = useMemo(() => {
     if (!user) return null;
@@ -74,6 +74,34 @@ export default function DashboardMobile({ user, onNavigate, currentOutfit, outfi
       .finally(() => setHistoryLoading(false));
   }, [auth, user?.profileId]);
 
+  useEffect(() => {
+    if (!auth) return;
+    const fetchWeather = (lat, lon) => {
+      weatherApi.getWeather(auth, lat, lon)
+        .then((data) => {
+          setWeather({
+            location: data.city || 'Unknown',
+            temp: Math.round(data.temperature ?? 0),
+            condition: data.condition || '—',
+            humidity: data.humidity ?? '—',
+            uvIndex: '—',
+            windSpeed: Math.round((data.wind_speed ?? 0) * 3.6),
+            feelsLike: Math.round(data.feelsLike ?? 0),
+          });
+        })
+        .catch(() => setWeather(null));
+    };
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude),
+        () => fetchWeather(32.0833, 34.8),
+        { timeout: 5000 }
+      );
+    } else {
+      fetchWeather(32.0833, 34.8);
+    }
+  }, [auth]);
+
   const outfitForHero = currentOutfit
     ? {
         title: currentOutfit.dateCreated
@@ -117,7 +145,7 @@ export default function DashboardMobile({ user, onNavigate, currentOutfit, outfi
         <Metric icon={RefreshCcw} label="Repeat risk" value="Low" />
       </div>
 
-      <WeatherCard weather={demoWeather} />
+      {weather && <WeatherCard weather={weather} />}
 
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">

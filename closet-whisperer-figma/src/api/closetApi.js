@@ -216,6 +216,18 @@ export const adminApi = {
   // GET /admin/openai-status?userSystemID=&userEmail=&userPassword=
   getOpenAiStatus: (auth) =>
     apiRequest(`/admin/openai-status${qs(auth)}`),
+
+  // GET /admin/weather-status?userSystemID=&userEmail=&userPassword=
+  getWeatherStatus: (auth) =>
+    apiRequest(`/admin/weather-status${qs(auth)}`),
+};
+
+// ── Weather ───────────────────────────────────────────────────────────────────
+
+export const weatherApi = {
+  // GET /weather?lat=&lon=&userSystemID=&userEmail=&userPassword=
+  getWeather: (auth, lat, lon) =>
+    apiRequest(`/weather${qs({ lat, lon, ...auth })}`),
 };
 
 // ── Commands ─────────────────────────────────────────────────────────────────
